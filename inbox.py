@@ -44,12 +44,13 @@ class Inbox(object):
         self.collator = collator
         return collator
 
-    def serve(self, port=None, address=None):
+    def serve(self, port=None, address=None, log_level='INFO'):
         """Serves the SMTP server on the given port and address."""
         port = port or self.port
         address = address or self.address
+        log.level_name = log_level
 
-        log.info('Starting SMTP server at {0}:{1}'.format(address, port))
+        log.info('Starting SMTP server at {0}:{1} with {2} level logging'.format(address, port, log_level))
 
         server = InboxServer(self.collator, (address, port), None)
 
@@ -61,10 +62,12 @@ class Inbox(object):
     def dispatch(self):
         """Command-line dispatch."""
         parser = argparse.ArgumentParser(description='Run an Inbox server.')
+        log_choices = ['critical', 'error', 'warning', 'notice', 'info', 'debug']
 
-        parser.add_argument('addr', metavar='addr', type=str, help='addr to bind to')
-        parser.add_argument('port', metavar='port', type=int, help='port to bind to')
+        parser.add_argument('-a', '--addr', metavar='addr', type=str, help='addr to bind to', required=True)
+        parser.add_argument('-p', '--port', metavar='port', type=int, help='port to bind to', required=True)
+	    parser.add_argument('-l', '--log', metavar='log', type=str, help='logging level (%s)' % (','.join(log_choices)), default='info', choices=log_choices)
 
         args = parser.parse_args()
 
-        self.serve(port=args.port, address=args.addr)
+        self.serve(port=args.port, address=args.addr, log_level=args.log.upper())
